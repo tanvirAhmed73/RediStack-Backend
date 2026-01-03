@@ -1,0 +1,27 @@
+import {Express} from "express";
+import swaggerJsdoc from "swagger-jsdoc"
+import swaggerUi from "swagger-ui-express"
+import appConfig from "./app.config";
+
+export function swaggerSetup (app:Express){
+    const config = appConfig()
+    const options = {
+        definition: {
+        info: {
+            title: config.app.name || "Redistack-Backend",
+            version: '1.0.0',
+            description: config.app.description || ""
+            },
+        servers:[
+            {
+                url: config.app.swagger_base_url
+            }
+        ]
+        },
+        apis: ['./src/**/routes/*.ts'], 
+    };
+  
+  const openapiSpecification = swaggerJsdoc(options);
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openapiSpecification));
+
+}
