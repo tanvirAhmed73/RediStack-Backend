@@ -8,7 +8,10 @@
     "dev": "nodemon",
     "build": "tsc",
     "start": "node src/main.ts",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prisma:migrate": "prisma migrate dev --config=src/config/prisma.config.ts",
+    "prisma:generate": "prisma generate --config=src/config/prisma.config.ts",
+    "prisma:studio": "prisma studio --config=src/config/prisma.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +20,7 @@
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "pg": "^8.16.3",
@@ -25,6 +29,7 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
     "@types/node": "^25.0.3",

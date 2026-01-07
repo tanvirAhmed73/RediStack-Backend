@@ -2,11 +2,24 @@ import 'dotenv/config'
 import express from "express"
 
 import logger from "./utlis/logger"
-import { swaggerSetup } from "./config/swagger"
+import { swaggerSetup } from "./config/docs/swagger"
 import appConfig from "./config/app.config"
 import { initRoutes } from "./initRoutes"
 import { prisma } from './utlis/prisma'
+import { globalErrorHandler } from './middlewares/globalErrorHandler'
+import { AppError } from './utlis/appError'
 
+
+// 🔥 Node.js level error protection (TOP LEVEL)
+process.on("uncaughtException", (err) => {
+  logger.error("UNCAUGHT EXCEPTION 💥", err)
+  process.exit(1)
+})
+
+process.on("unhandledRejection", (err) => {
+  logger.error("UNHANDLED REJECTION 💥", err)
+  process.exit(1)
+})
 
 async function bootstrap() {
   const app = express()
@@ -31,6 +44,14 @@ async function bootstrap() {
   
     // Initialize Routes setup
     initRoutes(app)
+
+    // Unhandled route (catch-all for Express 5)
+    app.use((req, _res, next) => {
+      next(new AppError(`Route ${req.originalUrl} not found`, 404))
+    })
+
+    // Global Error Handler
+    app.use(globalErrorHandler)
   
     app.listen(port, () => {
       logger.info(`${config.app.name} app listening on port ${port}`)
