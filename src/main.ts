@@ -8,16 +8,20 @@ import { initRoutes } from "./initRoutes"
 import { prisma } from './utlis/prisma'
 import { globalErrorHandler } from './middlewares/globalErrorHandler'
 import { AppError } from './utlis/appError'
+import { connectRedis, disconnectRedis } from './config/redis.config'
+import './mail/mail.processor' // Initialize email worker
 
 
 // 🔥 Node.js level error protection (TOP LEVEL)
-process.on("uncaughtException", (err) => {
+process.on("uncaughtException", async (err) => {
   logger.error("UNCAUGHT EXCEPTION 💥", err)
+  await disconnectRedis()
   process.exit(1)
 })
 
-process.on("unhandledRejection", (err) => {
+process.on("unhandledRejection", async (err) => {
   logger.error("UNHANDLED REJECTION 💥", err)
+  await disconnectRedis()
   process.exit(1)
 })
 
@@ -36,6 +40,9 @@ async function bootstrap() {
     // check Postgres connection
     await prisma.$connect()
     logger.info('Connected to Postgres')
+
+    // Redis connection
+    await connectRedis()
 
     // swagger setup
     if(config.app.node_env !== 'production'){

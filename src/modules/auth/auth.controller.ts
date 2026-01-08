@@ -5,6 +5,7 @@ import bcrypt from "bcrypt";
 import { AppError } from "../../utlis/appError";
 import logger from "../../utlis/logger";
 import { sendError, sendSuccess } from "../../utlis/helper/response";
+import { sendVerificationEmail } from "../../mail/mail.service";
 
 export const signUp = async (req:Request ,res:Response)=>{
     const {name, email, password } = req.body;
@@ -27,6 +28,10 @@ export const signUp = async (req:Request ,res:Response)=>{
         // create user
         const user = await createUser(name, email, hashedPassword);
         logger.info("User created successfully");
+
+        // send verification email
+        await sendVerificationEmail(email);
+        logger.info("Verification email sent successfully");
 
         return sendSuccess(res, null, "Registration successful.Please check your email to verify your account.", 201);
     } catch (error) {

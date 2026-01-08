@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f4f4f7;">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Verification</title>
+    <style>
+      /* General reset */
+      body, html {
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f7;
+      }
+
+      /* Container */
+      .email-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background-color: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      /* Header */
+      .email-header {
+        background-color: #0d6efd;
+        color: #ffffff;
+        text-align: center;
+        padding: 20px;
+        font-size: 24px;
+        font-weight: bold;
+      }
+
+      /* Body */
+      .email-body {
+        padding: 30px;
+        color: #333333;
+        line-height: 1.6;
+      }
+
+      .otp-code {
+        display: inline-block;
+        font-size: 32px;
+        font-weight: bold;
+        letter-spacing: 4px;
+        color: #0d6efd;
+        margin: 20px 0;
+        padding: 10px 20px;
+        border: 2px dashed #0d6efd;
+        border-radius: 6px;
+        background-color: #f0f4ff;
+      }
+
+      /* Footer */
+      .email-footer {
+        padding: 20px;
+        font-size: 12px;
+        text-align: center;
+        color: #888888;
+      }
+
+      @media only screen and (max-width: 600px) {
+        .email-container {
+          width: 100% !important;
+          margin: 0;
+          border-radius: 0;
+        }
+        .otp-code {
+          font-size: 28px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <div class="email-header">
+        <%= appName || "My App" %>
+      </div>
+      <div class="email-body">
+        <p>Welcome To <%= appName || "My App" %> ,</p>
+        <p>We received a request to verify your email address. Please use the OTP code below to complete verification:</p>
+        <div class="otp-code">
+          <%= verificationOtp %>
+        </div>
+        <p>This OTP will expire in <%= expireTime %> minutes. Do not share it with anyone.</p>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+      </div>
+      <div class="email-footer">
+        &copy; <%= new Date().getFullYear() %> <%= appName || "My App" %>. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
