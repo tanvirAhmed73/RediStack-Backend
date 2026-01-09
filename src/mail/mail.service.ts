@@ -2,16 +2,20 @@ import { generateRandomOtp } from "../utlis/helper/generateRandomOtp";
 import logger from "../utlis/logger";
 import { emailQueue } from "./email.queue";
 import appConfig from "../config/app.config";
+import { saveEmailVerificationOtp } from "../modules/auth/otp.service";
 
 const config = appConfig();
 
 export const sendVerificationEmail = async (email:string)=>{
     const verificationOtp = generateRandomOtp();
     logger.info(`Email Verification OTP Generated Successfully`);
-
+    
     const from = `${config.app.name} <${config.mail.mail_from}>`;
     const subject = "Verify your email";
-    const expireTime = 1;
+    const expireTime = Number(config.mail.verification_expire_time);
+
+    // saving otp in redis
+    await saveEmailVerificationOtp(email, verificationOtp, expireTime)
 
     await emailQueue.add("send-verification-email", {
         from,
