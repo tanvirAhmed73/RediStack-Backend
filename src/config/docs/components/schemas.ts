@@ -112,4 +112,124 @@
  *               example: "2021-01-01T00:00:00.000Z"
  *             deletedAt:
  *               type: string
+ *     ResendOtpRequest:
+ *        type: object
+ *        properties:
+ *         email:
+ *           type: string
+ *           example: "user@gmail.com"
+ *     VerificationEmailSentResponse:
+ *        type: object
+ *        properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         status:
+ *           type: number
+ *           example: 200
+ *         message:
+ *           type: string
+ *           example: "Verification email sent successfully"
+ *         data:
+ *           type: null
+ *           example: null
+ *     LoginRequest:
+ *        type: object
+ *        properties:
+ *         email:
+ *           type: string
+ *           example: "user@gmail.com"
+ *         password:
+ *           type: string
+ *           example: "SecurePassword123!"
+ *     LoginResponse:
+ *        type: object
+ *        properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         status:
+ *           type: number
+ *           example: 200
+ *         message:
+ *           type: string
+ *           example: "Login successful"
+ *         data:
+ *           type: object
+ *           properties:
+ *             id:
+ *               type: string
+ *               example: "123"
+ *             name:
+ *               type: string
+ *               example: "John Doe"
+ *             email:
+ *               type: string
+ *               example: "john@example.com"
+ *             avatar:
+ *               type: string
+ *               example: "https://example.com/avatar.jpg"
+ *             role:
+ *               type: string
+ *               example: "user"
+ *             isVerified:
+ *               type: boolean
+ *               example: true
+ *             createdAt:
+ *               type: string
+ *               example: "2021-01-01T00:00:00.000Z"
+ *             updatedAt:
+ *               type: string
+ *               example: "2021-01-01T00:00:00.000Z"
+ *             deletedAt:
+ *               type: string
+ *               example: "2021-01-01T00:00:00.000Z"
+ *     RefreshTokenRequest:
+ *        type: object
+ *        properties:
+ *         refreshToken:
+ *           type: string
+ *           example: "1234567890"
+ *         sessionId:
+ *           type: string
+ *           example: "1234567890"
+ *     RefreshTokenResponse:
+ *        type: object
+ *        properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         status:
+ *           type: number
+ *           example: 200
+ *         message:
+ *           type: string
+ *           example: "Refresh token successful"
+ *         data:
+ *           type: object
+ *           properties:
+ *             accessToken:
+ *               type: string
+ *               example: "1234567890"
+ *     LogoutRequest:
+ *        type: object
+ *        properties:
+ *         sessionId:
+ *           type: string
+ *           example: "1234567890"
+ *     LogoutResponse:
+ *        type: object
+ *        properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         status:
+ *           type: number
+ *           example: 200
+ *         message:
+ *           type: string
+ *           example: "Logout successful"
+ *         data:
+ *           type: null
+ *           example: null
  */

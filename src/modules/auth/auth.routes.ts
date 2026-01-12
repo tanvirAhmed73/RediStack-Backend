@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { getUserDetails, signUp, verifyEmailByOtp } from "./auth.controller";
+import { getUserDetails, login, refreshToken, resendOtp, signUp, verifyEmailByOtp } from "./auth.controller";
+import { authenticate } from "../../middlewares/auth.middleware";
+import { logout } from "./auth.controller";
 
 const authRoutes = Router()
 
@@ -16,6 +18,7 @@ const authRoutes = Router()
  *   post:
  *     summary: Create user
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -39,6 +42,7 @@ authRoutes.post('/signup', signUp)
  *   post:
  *     summary: Verify email by OTP
  *     tags: [Auth]
+ *     security: []
  *     requestBody:
  *       required: true
  *       content:
@@ -68,7 +72,102 @@ authRoutes.post('/verify-email-by-otp', verifyEmailByOtp)
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/UserDetailsResponse'
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  */
-authRoutes.get('/me', getUserDetails)
+authRoutes.get('/me', authenticate, getUserDetails)
 
+/**
+ * @swagger
+ * /api/v1/auth/resend-otp:
+ *   post:
+ *     summary: Resend OTP
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ResendOtpRequest'
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/VerificationEmailSentResponse'
+ */
+authRoutes.post('/resend-otp', resendOtp)
+
+/**
+ * @swagger
+ * /api/v1/auth/login:
+ *   post:
+ *     summary: Login
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema: 
+ *               $ref: '#/components/schemas/LoginResponse'
+ */
+authRoutes.post('/login', login)
+
+
+/**
+ * @swagger
+ * /api/v1/auth/refresh-token:
+ *   post:
+ *     summary: Refresh token
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/RefreshTokenRequest'
+ *     responses:
+ *       200:
+ *         description: Refresh token successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RefreshTokenResponse'
+ */
+authRoutes.post('/refresh-token', refreshToken)
+
+
+/**
+ * @swagger
+ * /api/v1/auth/logout:
+ *   post:
+ *     summary: Logout
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LogoutRequest'
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LogoutResponse'
+ */
+authRoutes.post('/logout', authenticate, logout)
 export default authRoutes

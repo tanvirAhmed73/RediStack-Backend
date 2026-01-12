@@ -5,8 +5,8 @@ import appConfig from "../../config/app.config"
 import { AppError } from "../../utlis/appError";
 
 const config = appConfig();
-const MAX_OTP_ATTEMPTS = Number(config.mail.max_otp_attempt);
-const VERIFICATION_EXPIRE_TIME = Number(config.mail.verification_expire_time);
+const MAX_REQ_OTP_ATTEMPTS = Number(config.mail.max_req_otp_attempt);
+const ATTEMPT_LIMIT_WINDOW_TIME = Number(config.mail.attempt_limit_window_time);
 
 export const saveEmailVerificationOtp = async(email:string, verificationOtp:string, expireTime:number)=>{
     const hashedOtp = hashOtp(verificationOtp)
@@ -17,6 +17,10 @@ export const saveEmailVerificationOtp = async(email:string, verificationOtp:stri
         "EX",
         expireTime
     )
+
+    // save the current time as the last OTP request time
+    await redisConnection().set(`auth:email_otp_request_time:${email}`, Date.now().toString(), "EX", expireTime);
+
     logger.info(`Email Verification OTP Saved Successfully: ${result}`);
 
     // attemt reset otp if new otp is generated
@@ -37,13 +41,12 @@ export const verifyEmailOtp = async(email:string, otp:string)=>{
 
     // Set expiration for attempts
     if (attempts === 1) {
-        await redisConnection().expire(attemptsKey, VERIFICATION_EXPIRE_TIME)
+        await redisConnection().expire(attemptsKey, ATTEMPT_LIMIT_WINDOW_TIME)
     }
 
     // Check if maximum attempts reached
-    if (attempts > MAX_OTP_ATTEMPTS) {
-        throw new AppError("Too many attempts. Please try again later.", 400);
-
+    if (attempts > MAX_REQ_OTP_ATTEMPTS) {
+        throw new AppError(`Too many attempts. Please resend the OTP after ${ATTEMPT_LIMIT_WINDOW_TIME/60} minutes.`, 400);
     }
     
     // Check if OTP is valid
@@ -57,3 +60,4 @@ export const verifyEmailOtp = async(email:string, otp:string)=>{
     }
     throw new AppError("Invalid OTP", 400);
 }
+

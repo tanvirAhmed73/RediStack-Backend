@@ -13,6 +13,16 @@ export function swaggerSetup (app:Express){
                 version: '1.0.0',
                 description: config.app.description || ""
             },
+            components: {
+                securitySchemes: {
+                  bearerAuth: {
+                    type: "http",
+                    scheme: "bearer",
+                    bearerFormat: "JWT",
+                  },
+                },
+            },
+            security: [{ bearerAuth: [] }],
             servers: [
                 {
                     url: config.app.swagger_base_url || 'http://localhost:3000'

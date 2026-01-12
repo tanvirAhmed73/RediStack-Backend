@@ -1,16 +1,8 @@
 import { Job, Worker } from "bullmq";
 import logger from "../utlis/logger";
 import { mailTransporter } from "../config/mail.config";
-import appConfig from "../config/app.config";
-import path from "node:path";
-import fs from "node:fs";
-import ejs from "ejs";
 import { getBullConnection } from "../config/bullmq.config";
 import { renderEmailTemplate } from "./email.templete.loader";
-
-const config = appConfig();
-
-const TEMPLATE_DIR = path.join(__dirname, "templates");
 
 // Create and export the worker so it can be initialized in main.ts
 export const emailWorker = new Worker(

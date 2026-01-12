@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import express from "express"
+import "./types/express" // Load Express type extensions
 
 import logger from "./utlis/logger"
 import { swaggerSetup } from "./config/docs/swagger"
@@ -12,7 +13,7 @@ import { connectRedis, disconnectRedis } from './config/redis.config'
 import './mail/mail.processor' // Initialize email worker
 
 
-// 🔥 Node.js level error protection (TOP LEVEL)
+// 🔥 Node.js level error protection (TOP LEVEL ERROR HANDLING)
 process.on("uncaughtException", async (err) => {
   logger.error("UNCAUGHT EXCEPTION 💥", err)
   await disconnectRedis()
@@ -52,7 +53,7 @@ async function bootstrap() {
     // Initialize Routes setup
     initRoutes(app)
 
-    // Unhandled route (catch-all for Express 5)
+    // Unhandled route 
     app.use((req, _res, next) => {
       next(new AppError(`Route ${req.originalUrl} not found`, 404))
     })

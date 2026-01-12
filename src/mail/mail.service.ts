@@ -12,17 +12,17 @@ export const sendVerificationEmail = async (email:string)=>{
     
     const from = `${config.app.name} <${config.mail.mail_from}>`;
     const subject = "Verify your email";
-    const expireTime = Number(config.mail.verification_expire_time);
+    const otpexpireTime = Number(config.mail.otp_validity_time);
 
     // saving otp in redis
-    await saveEmailVerificationOtp(email, verificationOtp, expireTime)
+    await saveEmailVerificationOtp(email, verificationOtp, otpexpireTime)
 
     await emailQueue.add("send-verification-email", {
         from,
         to:email,
         subject,
         context: {
-            expireTime: expireTime,
+            expireTime: otpexpireTime,
             verificationOtp,
         },
     });

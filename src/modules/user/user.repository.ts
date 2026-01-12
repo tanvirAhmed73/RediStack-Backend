@@ -29,9 +29,21 @@ export const getUserByEmail = async (email:string)=>{
         logger.error(`User not found: ${email}`);
         throw new AppError("User not found", 404);
     }
-    // remove password from user
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    
+    return user;
+}
+
+// get user by id, return the user if found else throw an error
+export const getUserById = async (id:string)=>{
+    const user = await prisma.user.findUnique({
+        where: { id }
+    })
+    if (!user) {
+        logger.error(`User not found: ${id}`);
+        throw new AppError("User not found", 404);
+    }
+    
+    return user;
 }
 
 // update user data in the database, return the user if updated successfully else throw an error
