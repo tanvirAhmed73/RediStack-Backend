@@ -11,6 +11,8 @@ import { globalErrorHandler } from './middlewares/globalErrorHandler'
 import { AppError } from './utlis/appError'
 import { connectRedis, disconnectRedis } from './config/redis.config'
 import './mail/mail.processor' // Initialize email worker
+import { createHttpServer } from './server'
+import { initSocket } from './socket'
 
 
 // 🔥 Node.js level error protection (TOP LEVEL ERROR HANDLING)
@@ -60,8 +62,12 @@ async function bootstrap() {
 
     // Global Error Handler
     app.use(globalErrorHandler)
+
+    const httpServer = createHttpServer(app)
+    // init socket.io
+    await initSocket(httpServer)
   
-    app.listen(port, () => {
+    httpServer.listen(port, () => {
       logger.info(`${config.app.name} app listening on port ${port}`)
     })
   } catch (error) {

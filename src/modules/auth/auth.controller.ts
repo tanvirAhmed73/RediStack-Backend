@@ -10,11 +10,10 @@ import { verifyEmailOtp } from "./otp.service";
 import { redisConnection } from "../../config/redis.config";
 import appConfig from "../../config/app.config";
 import { verifyPassword } from "./auth.service";
-import { generateAccessToken } from "../../utlis/token";
+import { generateAccessToken } from "../../utlis/helper/auth";
 import { JwtPayload } from "jsonwebtoken";
 import { checkLoginRateLimit, clearLoginAttempts } from "../../rate-limit/loginRateLimiter";
 import { createSession, deleteSession, verifyRefreshToken } from "../../sessions/session.service";
-
 
 const config = appConfig();
 
@@ -236,7 +235,6 @@ export const refreshToken = async (req:Request ,res:Response)=>{
         return sendError(res, "Internal server error", 500);
     }
 }
-
 
 // logout
 export const logout = async (req:Request ,res:Response)=>{

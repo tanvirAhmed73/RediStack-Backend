@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redis Pub/Sub Chat - 1-on-1 & Group Chat</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            height: calc(100vh - 40px);
+        }
+
+        .sidebar {
+            background: #2d3748;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 2px solid #4a5568;
+            padding-bottom: 10px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section h3 {
+            font-size: 14px;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 10px;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        input {
+            background: #4a5568;
+            color: white;
+            border: 1px solid #718096;
+        }
+
+        input::placeholder {
+            color: #a0aec0;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .status.connected {
+            background: #48bb78;
+        }
+
+        .status.disconnected {
+            background: #f56565;
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-header {
+            background: #667eea;
+            color: white;
+            padding: 20px;
+            font-weight: 600;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f7fafc;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .message.own {
+            background: #e6fffa;
+            margin-left: 20%;
+        }
+
+        .message-header {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .message-content {
+            color: #2d3748;
+            word-wrap: break-word;
+        }
+
+        .message-type {
+            font-size: 10px;
+            background: #667eea;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+
+        .message-status {
+            font-size: 9px;
+            background: #a0aec0;
+            color: white;
+            padding: 2px 5px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: #f7fafc;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+        }
+
+        .input-area button {
+            width: auto;
+            padding: 10px 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: #718096;
+            font-size: 12px;
+            padding: 5px 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Chat Controls</h2>
+            
+            <div class="status disconnected" id="status">Disconnected</div>
+
+            <div class="section">
+                <h3>Direct Message</h3>
+                <input type="text" id="dmRecipientId" placeholder="Recipient User ID">
+                <button onclick="sendDM()">Send DM</button>
+                <button onclick="loadDMHistory()">Load History</button>
+            </div>
+
+            <div class="section">
+                <h3>Group Chat</h3>
+                <input type="text" id="groupId" placeholder="Group ID">
+                <button onclick="joinGroup()">Join Group</button>
+                <button onclick="leaveGroup()">Leave Group</button>
+                <button onclick="loadGroupHistory()">Load History</button>
+            </div>
+
+            <div class="section">
+                <h3>Presence</h3>
+                <input type="text" id="checkUserId" placeholder="User ID to check">
+                <button onclick="checkOnline()">Check Online</button>
+            </div>
+        </div>
+
+        <div class="chat-area">
+            <div class="chat-header">
+                <div id="chatTitle">Select a chat to start</div>
+            </div>
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Replace with your actual JWT token
+        const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3NThmZTE3NC0wMGM3LTRjN2UtOTAwMy1hNmVhYWNlMjM0NjMiLCJpYXQiOjE3NjgyOTU4NzYsImV4cCI6MTc2ODM4MjI3Nn0.7hFZo1fn5JSeCqq6ZDkSZ1g-1AMRUA2PaODHH-R24qg";
+        
+        const socket = io("http://localhost:4000", {
+            auth: { token: TOKEN }
+        });
+
+        let currentChatType = null; // 'dm' or 'group'
+        let currentRecipientId = null; // For DM
+        let currentGroupId = null; // For group
+        let typingTimeout = null;
+
+        // Connection status
+        socket.on("connect", () => {
+            console.log("Connected:", socket.id);
+            document.getElementById("status").textContent = "Connected";
+            document.getElementById("status").className = "status connected";
+            showNotification("Connected to server");
+        });
+
+        socket.on("disconnect", () => {
+            console.log("Disconnected");
+            document.getElementById("status").textContent = "Disconnected";
+            document.getElementById("status").className = "status disconnected";
+            showNotification("Disconnected from server");
+        });
+
+        // Chat message received
+        socket.on("chat:message", (data) => {
+            console.log("Message received:", data);
+            addMessage(data.message, data.senderId, data.type, data.timestamp);
+        });
+
+        // DM history received
+        socket.on("chat:dm-history", (data) => {
+            console.log("DM History:", data);
+            document.getElementById("messages").innerHTML = "";
+            data.messages.forEach(msg => {
+                addMessage(msg.message, msg.senderId, 'dm', msg.timestamp, true);
+            });
+            currentChatType = 'dm';
+            currentRecipientId = data.otherUserId;
+            document.getElementById("chatTitle").textContent = `DM with ${data.otherUserId}`;
+        });
+
+        // Group history received
+        socket.on("chat:group-history", (data) => {
+            console.log("Group History:", data);
+            document.getElementById("messages").innerHTML = "";
+            data.messages.forEach(msg => {
+                addMessage(msg.message, msg.senderId, 'group', msg.timestamp, true);
+            });
+            currentChatType = 'group';
+            currentGroupId = data.groupId;
+            document.getElementById("chatTitle").textContent = `Group: ${data.groupId}`;
+        });
+
+        // Typing indicator
+        socket.on("chat:typing", (data) => {
+            showTypingIndicator(data.userId, data.isTyping);
+        });
+
+        // Notifications
+        socket.on("notification", (data) => {
+            console.log("Notification:", data);
+            showNotification(`${data.title}: ${data.message}`);
+        });
+
+        // Error handling
+        socket.on("chat:error", (data) => {
+            console.error("Chat error:", data);
+            showNotification(`Error: ${data.message}`, true);
+        });
+
+        // Success events
+        socket.on("chat:sent", (data) => {
+            console.log("Message sent:", data);
+        });
+
+        socket.on("chat:joined-group", (data) => {
+            showNotification(`Joined group: ${data.groupId}`);
+            currentChatType = 'group';
+            currentGroupId = data.groupId;
+            document.getElementById("chatTitle").textContent = `Group: ${data.groupId}`;
+        });
+
+        socket.on("chat:left-group", (data) => {
+            showNotification(`Left group: ${data.groupId}`);
+            if (currentGroupId === data.groupId) {
+                currentChatType = null;
+                currentGroupId = null;
+                document.getElementById("chatTitle").textContent = "Select a chat to start";
+                document.getElementById("messages").innerHTML = "";
+            }
+        });
+
+        socket.on("chat:online-status", (data) => {
+            showNotification(`User ${data.userId} is ${data.online ? 'online' : 'offline'}`);
+        });
+
+        socket.on("chat:online-users", (data) => {
+            console.log("Online users:", data.users);
+            showNotification(`Online users: ${data.users.length}`);
+        });
+
+        socket.on("chat:delivered", (data) => {
+            console.log("Message delivered:", data.messageId);
+            updateMessageStatus(data.messageId, 'delivered');
+        });
+
+        socket.on("chat:read", (data) => {
+            console.log("Message read:", data.messageId);
+            updateMessageStatus(data.messageId, 'read');
+        });
+
+        socket.on("chat:delivery-status", (data) => {
+            console.log("Delivery status:", data);
+        });
+
+        // Functions
+        function sendDM() {
+            const recipientId = document.getElementById("dmRecipientId").value.trim();
+            if (!recipientId) {
+                alert("Please enter recipient ID");
+                return;
+            }
+            currentChatType = 'dm';
+            currentRecipientId = recipientId;
+            document.getElementById("chatTitle").textContent = `DM with ${recipientId}`;
+            loadDMHistory();
+        }
+
+        function sendGroupMessage() {
+            const groupId = document.getElementById("groupId").value.trim();
+            if (!groupId) {
+                alert("Please enter group ID");
+                return;
+            }
+            currentChatType = 'group';
+            currentGroupId = groupId;
+            document.getElementById("chatTitle").textContent = `Group: ${groupId}`;
+        }
+
+        function joinGroup() {
+            const groupId = document.getElementById("groupId").value.trim();
+            if (!groupId) {
+                alert("Please enter group ID");
+                return;
+            }
+            socket.emit("chat:join-group", { groupId });
+        }
+
+        function leaveGroup() {
+            const groupId = document.getElementById("groupId").value.trim();
+            if (!groupId) {
+                alert("Please enter group ID");
+                return;
+            }
+            socket.emit("chat:leave-group", { groupId });
+        }
+
+        function loadDMHistory() {
+            if (!currentRecipientId) {
+                const recipientId = document.getElementById("dmRecipientId").value.trim();
+                if (!recipientId) {
+                    alert("Please enter recipient ID");
+                    return;
+                }
+                currentRecipientId = recipientId;
+            }
+            socket.emit("chat:get-dm-history", { otherUserId: currentRecipientId, limit: 50 });
+        }
+
+        function loadGroupHistory() {
+            const groupId = document.getElementById("groupId").value.trim();
+            if (!groupId) {
+                alert("Please enter group ID");
+                return;
+            }
+            socket.emit("chat:get-group-history", { groupId, limit: 50 });
+        }
+
+        function checkOnline() {
+            const userId = document.getElementById("checkUserId").value.trim();
+            if (!userId) {
+                alert("Please enter user ID");
+                return;
+            }
+            socket.emit("chat:check-online", { userId });
+        }
+
+        function getOnlineUsers() {
+            socket.emit("chat:get-online-users");
+        }
+
+        function sendMessage() {
+            const input = document.getElementById("messageInput");
+            const message = input.value.trim();
+            
+            if (!message) return;
+            if (!currentChatType) {
+                alert("Please select a chat (DM or Group) first");
+                return;
+            }
+
+            if (currentChatType === 'dm') {
+                socket.emit("chat:send-dm", {
+                    recipientId: currentRecipientId,
+                    message: message
+                });
+            } else if (currentChatType === 'group') {
+                socket.emit("chat:send-group", {
+                    groupId: currentGroupId,
+                    message: message
+                });
+            }
+
+            input.value = "";
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            } else {
+                // Send typing indicator
+                if (currentChatType === 'dm') {
+                    socket.emit("chat:typing-dm", {
+                        recipientId: currentRecipientId,
+                        isTyping: true
+                    });
+                } else if (currentChatType === 'group') {
+                    socket.emit("chat:typing-group", {
+                        groupId: currentGroupId,
+                        isTyping: true
+                    });
+                }
+
+                // Clear previous timeout
+                if (typingTimeout) clearTimeout(typingTimeout);
+                
+                // Stop typing indicator after 2 seconds
+                typingTimeout = setTimeout(() => {
+                    if (currentChatType === 'dm') {
+                        socket.emit("chat:typing-dm", {
+                            recipientId: currentRecipientId,
+                            isTyping: false
+                        });
+                    } else if (currentChatType === 'group') {
+                        socket.emit("chat:typing-group", {
+                            groupId: currentGroupId,
+                            isTyping: false
+                        });
+                    }
+                }, 2000);
+            }
+        }
+
+        function addMessage(message, senderId, type, timestamp, fromHistory = false) {
+            const messagesDiv = document.getElementById("messages");
+            const messageDiv = document.createElement("div");
+            messageDiv.className = "message";
+            
+            // Check if message is from current user (you'd need to get your userId from token)
+            // For now, we'll just show all messages
+            const date = new Date(timestamp);
+            const timeStr = date.toLocaleTimeString();
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span>
+                        <span class="message-type">${type.toUpperCase()}</span>
+                        <strong>${senderId}</strong>
+                    </span>
+                    <span>${timeStr}</span>
+                </div>
+                <div class="message-content">${escapeHtml(message)}</div>
+            `;
+            
+            if (!fromHistory) {
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            } else {
+                messagesDiv.insertBefore(messageDiv, messagesDiv.firstChild);
+            }
+        }
+
+        function showTypingIndicator(userId, isTyping) {
+            const messagesDiv = document.getElementById("messages");
+            let indicator = document.getElementById("typing-indicator");
+            
+            if (isTyping) {
+                if (!indicator) {
+                    indicator = document.createElement("div");
+                    indicator.id = "typing-indicator";
+                    indicator.className = "typing-indicator";
+                    messagesDiv.appendChild(indicator);
+                }
+                indicator.textContent = `${userId} is typing...`;
+            } else {
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
+
+        function showNotification(message, isError = false) {
+            const notification = document.createElement("div");
+            notification.className = "notification";
+            notification.style.background = isError ? "#f56565" : "#48bb78";
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import { redisConnection } from "../config/redis.config";
-import { generateRefreshToken } from "../utlis/token";
+import { generateRefreshToken } from "../utlis/helper/auth";
 import crypto from "crypto";
 import appConfig from "../config/app.config";
 import { AppError } from "../utlis/appError";
@@ -15,7 +15,6 @@ export const createSession = async (userId:string) => {
         userId,
         refreshToken
     }
-
 
     await redisConnection().set(`auth:refresh_token:${sessionId}`, JSON.stringify(sessionData), "EX", config.jwt.refresh_token_ttl)
     
