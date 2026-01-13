@@ -13,6 +13,7 @@ import { connectRedis, disconnectRedis } from './config/redis.config'
 import './mail/mail.processor' // Initialize email worker
 import { createHttpServer } from './server'
 import { initSocket } from './socket'
+import { apiRateLimiter } from './middlewares/rateLimiter'
 
 
 // 🔥 Node.js level error protection (TOP LEVEL ERROR HANDLING)
@@ -62,6 +63,9 @@ async function bootstrap() {
 
     // Global Error Handler
     app.use(globalErrorHandler)
+    
+    // API Rate Limiter
+    app.use(apiRateLimiter)
 
     const httpServer = createHttpServer(app)
     // init socket.io

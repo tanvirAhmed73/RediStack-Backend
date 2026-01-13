@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getUserDetails, login, refreshToken, resendOtp, signUp, verifyEmailByOtp } from "./auth.controller";
 import { authenticate } from "../../middlewares/auth.middleware";
 import { logout } from "./auth.controller";
+import { apiRateLimiter } from "../../middlewares/rateLimiter";
 
 const authRoutes = Router()
 
@@ -121,7 +122,7 @@ authRoutes.post('/resend-otp', resendOtp)
  *             schema: 
  *               $ref: '#/components/schemas/LoginResponse'
  */
-authRoutes.post('/login', login)
+authRoutes.post('/login', apiRateLimiter, login)
 
 
 /**

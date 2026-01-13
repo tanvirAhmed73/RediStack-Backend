@@ -26,5 +26,9 @@ export default ()=>({
         secret:process.env.JWT_SECRET,
         expiresIn:Number(process.env.JWT_EXPIRES_IN),
         refresh_token_ttl:Number(process.env.REFRESH_TOKEN_TTL) * 24 * 60 * 60
+    },
+    api:{
+        api_max_requests:Number(process.env.API_MAX_REQUEST),
+        api_window_second:Number(process.env.API_WINDOW_SECOND)
     }
 })
