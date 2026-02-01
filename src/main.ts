@@ -14,6 +14,7 @@ import './mail/mail.processor' // Initialize email worker
 import { createHttpServer } from './server'
 import { initSocket } from './socket'
 import { apiRateLimiter } from './middlewares/rateLimiter'
+import cors from 'cors'
 
 
 // 🔥 Node.js level error protection (TOP LEVEL ERROR HANDLING)
@@ -31,6 +32,11 @@ process.on("unhandledRejection", async (err) => {
 
 async function bootstrap() {
   const app = express()
+  app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }))
   app.use(express.json())
   const config = appConfig()
 

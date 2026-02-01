@@ -122,7 +122,7 @@ authRoutes.post('/resend-otp', resendOtp)
  *             schema: 
  *               $ref: '#/components/schemas/LoginResponse'
  */
-authRoutes.post('/login', apiRateLimiter, login)
+authRoutes.post('/login', login)
 
 
 /**

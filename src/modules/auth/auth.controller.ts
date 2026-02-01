@@ -183,7 +183,7 @@ export const login = async (req:Request ,res:Response)=>{
 
         const data ={
             ...userDataWithoutPassword,
-            accessToken,
+            token:accessToken,
             sessionId,
             refreshToken
         }
